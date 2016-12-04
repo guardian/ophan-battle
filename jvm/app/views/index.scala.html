@@ -1,7 +1,6 @@
 <html>
 <body>
-@scalajs.html.scripts("foo", routes.Assets.versioned(_).toString, name => getClass.getResource(s"/public/$name") != null)
-
+@fragments.jsinclude()
 <script type="text/javascript">
       Main().main();
     </script>

@@ -1,6 +1,5 @@
 package controllers
 
-import java.nio.ByteBuffer
 import javax.inject.{Inject, _}
 
 import akka.actor._
@@ -8,13 +7,10 @@ import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.stream.{ActorMaterializer, OverflowStrategy}
 import com.amazonaws.auth.profile.ProfileCredentialsProvider
 import com.amazonaws.auth.{AWSCredentialsProviderChain, InstanceProfileCredentialsProvider}
-import com.amazonaws.regions.Regions
-import com.amazonaws.services.kinesis.producer.{KinesisProducer, KinesisProducerConfiguration}
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.EventSource
 import play.api.mvc._
 import shared.AutowiredApi
-import streams.{AnalyticsStream, EventsConsumer}
 import upickle._
 import upickle.default._
 
@@ -34,19 +30,8 @@ object AutowireServer extends autowire.Server[Js.Value, Reader, Writer]{
 @Singleton
 class Api @Inject() (lifecycle: ApplicationLifecycle)(implicit system: ActorSystem) extends Controller with shared.AutowiredApi {
 
-  EventsConsumer.start()
-  lifecycle.addStopHook { () =>
-    Future.successful(EventsConsumer.stop())
-  }
-
   implicit val mat = ActorMaterializer()
   implicit val ec = system.dispatcher
-
-  val producer = new KinesisProducer(
-    new KinesisProducerConfiguration()
-        .setRegion(Regions.EU_WEST_1.getName)
-        .setCredentialsProvider(AWSCredentialsProvider.Chain)
-  )
 
 
   val (actorRef, publisher) =
@@ -77,11 +62,6 @@ class Api @Inject() (lifecycle: ApplicationLifecycle)(implicit system: ActorSyst
   override def makeAHit(): Future[String] = {
     actorRef ! TweetInfo("Whatever")
 
-    producer.addUserRecord(
-      AnalyticsStream.name,
-      "myReallyPartitionyPartitionKey",
-      ByteBuffer.wrap("myData".getBytes("UTF-8"))
-    )
     Future.successful("Totally sent it")
   }
 
