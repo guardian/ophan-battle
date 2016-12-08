@@ -47,19 +47,13 @@ lazy val ophanBattle = crossProject.in(file(".")).
     s"-J-Xloggc:/var/log/${name.value}/gc.log"
   ),
 
-  maintainer := "Membership Dev <membership.dev@theguardian.com>",
+  maintainer := "Roberto Tyley <roberto.tyley@theguardian.com>",
 
-  packageSummary := "Membership Frontend service",
+  packageSummary := "Ophan Battle service",
 
   packageDescription := """Ophan-Battle appserver""",
 
   riffRaffPackageType := (packageBin in Debian).value,
-
-  riffRaffBuildIdentifier := env("BUILD_NUMBER", "DEV"),
-
-  riffRaffManifestBranch := env("BRANCH_NAME", "unknown_branch"),
-
-  riffRaffManifestVcsUrl  := "git@github.com:guardian/membership-frontend.git",
 
   riffRaffUploadArtifactBucket := Option("riffraff-artifact"),
 

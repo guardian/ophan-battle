@@ -1,0 +1,8 @@
+regions: [eu-west-1]
+stacks: [membership]
+deployments:
+  ophanBattle:
+    type: autoscaling
+    parameters:
+      bucket: ophan-battle-dist
+
