@@ -8,6 +8,6 @@ addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.5.10")
 
 
 // For processing Thrift
-addSbtPlugin("com.twitter" %% "scrooge-sbt-plugin" % "4.9.0") // https://dl.bintray.com/sbt/sbt-plugin-releases/com.twitter/scrooge-sbt-plugin/scala_2.10/sbt_0.13/
+addSbtPlugin("com.twitter" %% "scrooge-sbt-plugin" % "4.8.0") // https://dl.bintray.com/sbt/sbt-plugin-releases/com.twitter/scrooge-sbt-plugin/scala_2.10/sbt_0.13/
 //the twitter repository
 resolvers += "twitter-repo" at "https://maven.twttr.com"
