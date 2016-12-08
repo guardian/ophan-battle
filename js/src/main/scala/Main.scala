@@ -1,7 +1,7 @@
 import autowire._
 import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.html.Canvas
-import shared.AutowiredApi
+import shared.{AutowiredApi, BattleState}
 import upickle.Js
 import upickle.default.{readJs, writeJs, _}
 
@@ -59,13 +59,13 @@ object Main extends js.JSApp {
 
     val eventSource = new dom.EventSource("/boom")
 
+
     eventSource.onmessage = {
       (message: dom.MessageEvent) =>
-        ctx.fillText(message.data.toString, Random.nextInt(300), Random.nextInt(300))
         println(message.data)
+        val state = Ajaxer.read[BattleState](upickle.json.read(message.data.toString))
+        ctx.fillText(state.toString, Random.nextInt(300), Random.nextInt(300))
     }
-    val lib = new MyLibrary
-    println(lib.sq(2))
   }
 
   @JSExport

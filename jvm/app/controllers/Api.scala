@@ -8,15 +8,22 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{BroadcastHub, Keep, MergeHub, Source}
 import com.amazonaws.auth.profile.ProfileCredentialsProvider
 import com.amazonaws.auth.{AWSCredentialsProviderChain, InstanceProfileCredentialsProvider}
+import com.google.common.util.concurrent.AtomicLongMap
+import com.gu.contentapi.client.model.v1.Tag
 import com.typesafe.scalalogging.LazyLogging
 import ophan.consumption._
 import ophan.thrift.event.{Event, PageView}
+import play.api.http.ContentTypes
 import play.api.libs.EventSource
+import play.api.libs.EventSource.EventDataExtractor
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
-import shared.AutowiredApi
+import shared.{AutowiredApi, BattleState}
 import upickle._
 import upickle.default._
+import util.MonitoredTags
 
+import scala.collection.convert.wrapAsScala._
 import scala.concurrent.{ExecutionContext, Future}
 
 
@@ -34,17 +41,20 @@ object AutowireServer extends autowire.Server[Js.Value, Reader, Writer] {
 
 @Singleton
 class Api @Inject()(
-  eventConsumerFactory: EventConsumerFactory
+  eventConsumerFactory: EventConsumerFactory,
+  monitoredTags: MonitoredTags
 )(implicit actorSystem: ActorSystem,
   mat: Materializer,
   ec: ExecutionContext) extends Controller with shared.AutowiredApi with LazyLogging {
 
   val (sink, source) =
-    MergeHub.source[String](perProducerBufferSize = 16)
+    MergeHub.source[BattleState](perProducerBufferSize = 16)
       .toMat(BroadcastHub.sink(bufferSize = 256))(Keep.both)
       .run()
 
   eventConsumerFactory.start(handleNewEvents)
+
+  val count = AtomicLongMap.create[String]()
 
   def handleNewEvents(events: Seq[Event]) {
     val now = Instant.now
@@ -52,7 +62,7 @@ class Api @Inject()(
     // println(events.size)
     val (oldEvents, newEvents): ((Seq[Event], Seq[Event])) = events.partition(_.instant.isBefore(threshold))
     if (oldEvents.nonEmpty) {
-      println(s"Disgarding ${oldEvents.size} because they're too old")
+      println(s"Discarding ${oldEvents.size} because they're too old")
     }
     val tuples: Seq[(Event, PageView)] = newEvents.flatMap(e => e.pageView.filter(_.page.url.path.contains("developer-blog")).map(pv => (e, pv)))
 
@@ -60,7 +70,24 @@ class Api @Inject()(
       val realtimeLatency = Duration.between(e.instant, now)
 
       println(s"${pv.page.url.path} - $realtimeLatency")
-      makeAHit()
+    }
+
+    for (interestingContent <- monitoredTags.interestingContent) {
+      val scoredTags: Seq[Tag] = for {
+        event <- newEvents
+        pageView <- event.pageView.toSeq
+        interestingTags <- interestingContent.get(pageView.page.url.path).toSeq
+        tag <- interestingTags
+      } yield tag
+      val countsByTag = scoredTags.groupBy(_.id).mapValues(_.size)
+      for {
+        (tagId, tagCount) <- countsByTag
+      } {
+        count.addAndGet(tagId, tagCount)
+      }
+      if (countsByTag.nonEmpty) {
+        send(BattleState(count.asMap().toMap.mapValues(_.toLong)))
+      }
     }
   }
 
@@ -76,15 +103,25 @@ class Api @Inject()(
   }
 
 
+  implicit val jsonEvents: EventDataExtractor[BattleState] = EventDataExtractor(bs=> upickle.default.write(bs))
+
   def mixedStream = Action {
-    Ok.chunked(source via EventSource.flow)
+    Ok.chunked(source via EventSource.flow).as(ContentTypes.EVENT_STREAM)
   }
 
   override def makeAHit(): Future[String] = {
-    Source.single("Whatever").runWith(sink)
+    send(BattleState(
+      Map[String, Long](
+        "foo" -> scala.util.Random.nextInt(50),
+        "bar" -> scala.util.Random.nextInt(50)
+      )
+    ))
 
     Future.successful("Totally sent it")
   }
 
 
+  private def send(state: BattleState) = {
+    Source.single(state).runWith(sink)
+  }
 }
