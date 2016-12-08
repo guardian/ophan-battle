@@ -28,8 +28,3 @@ class EventConsumerFactory @Inject()(
   }
 
 }
-
-object EventConsumerFactory {
-
-
-}
