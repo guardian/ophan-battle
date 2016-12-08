@@ -25,8 +25,8 @@ lazy val ophanBattle = crossProject.in(file(".")).
     "com.lihaoyi" %% "upickle" % "0.4.4",
     "com.lihaoyi" %% "autowire" % "0.2.6",
     "com.gu" %% "content-api-scala-client" % "8.2.1",
-    "com.amazonaws" % "aws-java-sdk-sts" % "1.10.73",
     "com.typesafe.scala-logging" %% "scala-logging" % "3.4.0",
+    "com.amazonaws" % "aws-java-sdk-sts" % "1.11.65",
     "com.amazonaws" % "amazon-kinesis-client" % "1.7.2"
   ),
   buildInfoKeys := Seq[BuildInfoKey](

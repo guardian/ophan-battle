@@ -41,6 +41,7 @@ object OphanEventStreamKinesisConfig {
     workerId)
     .withInitialLeaseTableReadCapacity(20)
     .withInitialLeaseTableWriteCapacity(40)
+    .withIdleTimeBetweenReadsInMillis(2000L)
     .withInitialPositionInStream(LATEST)
     .withRegionName(EU_WEST_1.getName)
 }
