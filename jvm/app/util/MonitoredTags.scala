@@ -7,7 +7,7 @@ import akka.actor.ActorSystem
 import com.gu.contentapi.client.GuardianContentClient
 import com.gu.contentapi.client.model.SearchQuery
 import com.typesafe.scalalogging.LazyLogging
-import ophan.consumption.EventsConsumer
+import ophan.consumption.EventConsumerFactory$
 import play.api.Play.current
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.concurrent.Akka

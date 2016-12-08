@@ -1,20 +1,24 @@
 package controllers
 
+import java.time.{Duration, Instant}
 import javax.inject.{Inject, _}
 
 import akka.actor._
-import akka.stream.scaladsl.{Keep, Sink, Source}
-import akka.stream.{ActorMaterializer, OverflowStrategy}
+import akka.stream.Materializer
+import akka.stream.scaladsl.{BroadcastHub, Keep, MergeHub, Source}
 import com.amazonaws.auth.profile.ProfileCredentialsProvider
 import com.amazonaws.auth.{AWSCredentialsProviderChain, InstanceProfileCredentialsProvider}
-import play.api.inject.ApplicationLifecycle
+import com.typesafe.scalalogging.LazyLogging
+import ophan.consumption._
+import ophan.thrift.event.{Event, PageView}
 import play.api.libs.EventSource
 import play.api.mvc._
 import shared.AutowiredApi
 import upickle._
 import upickle.default._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
+
 
 object AWSCredentialsProvider {
   val Dev = new ProfileCredentialsProvider("developerPlayground")
@@ -22,23 +26,41 @@ object AWSCredentialsProvider {
   val Chain = new AWSCredentialsProviderChain(Dev, Prod)
 }
 
-object AutowireServer extends autowire.Server[Js.Value, Reader, Writer]{
+object AutowireServer extends autowire.Server[Js.Value, Reader, Writer] {
   def read[Result: Reader](p: Js.Value) = upickle.default.readJs[Result](p)
+
   def write[Result: Writer](r: Result) = upickle.default.writeJs(r)
 }
 
 @Singleton
-class Api @Inject() (lifecycle: ApplicationLifecycle)(implicit system: ActorSystem) extends Controller with shared.AutowiredApi {
+class Api @Inject()(
+  eventConsumerFactory: EventConsumerFactory
+)(implicit actorSystem: ActorSystem,
+  mat: Materializer,
+  ec: ExecutionContext) extends Controller with shared.AutowiredApi with LazyLogging {
 
-  implicit val mat = ActorMaterializer()
-  implicit val ec = system.dispatcher
+  val (sink, source) =
+    MergeHub.source[String](perProducerBufferSize = 16)
+      .toMat(BroadcastHub.sink(bufferSize = 256))(Keep.both)
+      .run()
 
+  def handleNewEvents(events: Seq[Event]) {
+    val now = Instant.now
+    val threshold = now.minusSeconds(60)
+    // println(events.size)
+    val (oldEvents, newEvents): ((Seq[Event], Seq[Event])) = events.partition(_.instant.isBefore(threshold))
+    if (oldEvents.nonEmpty) {
+      println(s"Disgarding ${oldEvents.size} because they're too old")
+    }
+    val tuples: Seq[(Event, PageView)] = newEvents.flatMap(e => e.pageView.filter(_.page.url.path.contains("developer-blog")).map(pv => (e, pv)))
 
-  val (actorRef, publisher) =
-    Source.actorRef[TweetInfo](1000, OverflowStrategy.dropHead).toMat(Sink.asPublisher(true))(Keep.both).run()
+    tuples.foreach { case (e, pv) =>
+      val realtimeLatency = Duration.between(e.instant, now)
 
-  val actorPublisher = Source.fromPublisher(publisher).log("word up dog").map(_.whatever)
-
+      println(s"${pv.page.url.path} - $realtimeLatency")
+      makeAHit()
+    }
+  }
 
   def autowireApi(path: String) = Action.async(parse.json) { implicit request =>
     val autowireRequest = autowire.Core.Request(
@@ -53,14 +75,11 @@ class Api @Inject() (lifecycle: ApplicationLifecycle)(implicit system: ActorSyst
 
 
   def mixedStream = Action {
-    //Source.fromPublisher()
-    // val keywordSources = Source("Hey,boy,you,look,good,when,you,conform".split(",").toList)
-    // val responses = keywordSources.flatMapMerge(10, queryToSource)
-    Ok.chunked(actorPublisher via EventSource.flow)
+    Ok.chunked(source via EventSource.flow)
   }
 
   override def makeAHit(): Future[String] = {
-    actorRef ! TweetInfo("Whatever")
+    Source.single("Whatever").runWith(sink)
 
     Future.successful("Totally sent it")
   }

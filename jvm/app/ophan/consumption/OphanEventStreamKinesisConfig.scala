@@ -1,5 +1,6 @@
 package ophan.consumption
 
+import java.net.InetAddress
 import java.util.UUID
 
 import com.amazonaws.auth.profile.ProfileCredentialsProvider
@@ -7,11 +8,10 @@ import com.amazonaws.auth.{AWSCredentialsProviderChain, InstanceProfileCredentia
 import com.amazonaws.regions.Regions.EU_WEST_1
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream.LATEST
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.KinesisClientLibConfiguration
-import util.Config
 
-class OphanEventStreamKinesisConfig {
+object OphanEventStreamKinesisConfig {
     // This application name is used by KCL to store the checkpoint data about how much of the stream you have consumed.
-    val applicationName = s"${Config.stack}-${Config.app}-kinesis-${Config.stage}"
+    val applicationName = "ophan-battle-DEV-"+InetAddress.getLocalHost().getHostName // s"${Config.stack}-${Config.app}-kinesis-${Config.stage}"
 
     // The Kinesis stream you want to consume from
     val streamName = "ophan-events"
