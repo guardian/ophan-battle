@@ -7,6 +7,8 @@ addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.13")
 addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.5.10")
 
 
+addSbtPlugin("com.gu" % "sbt-riffraff-artifact" % "0.9.7")
+
 // For processing Thrift
 addSbtPlugin("com.twitter" %% "scrooge-sbt-plugin" % "4.8.0") // https://dl.bintray.com/sbt/sbt-plugin-releases/com.twitter/scrooge-sbt-plugin/scala_2.10/sbt_0.13/
 //the twitter repository

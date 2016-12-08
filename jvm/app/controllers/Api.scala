@@ -44,9 +44,11 @@ class Api @Inject()(
       .toMat(BroadcastHub.sink(bufferSize = 256))(Keep.both)
       .run()
 
+  eventConsumerFactory.start(handleNewEvents)
+
   def handleNewEvents(events: Seq[Event]) {
     val now = Instant.now
-    val threshold = now.minusSeconds(60)
+    val threshold = now.minusSeconds(120)
     // println(events.size)
     val (oldEvents, newEvents): ((Seq[Event], Seq[Event])) = events.partition(_.instant.isBefore(threshold))
     if (oldEvents.nonEmpty) {

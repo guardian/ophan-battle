@@ -1,8 +1,12 @@
 import sbt.Keys.managedSourceDirectories
 
+import com.typesafe.sbt.packager.archetypes.ServerLoader.Systemd
+
 name := "ophan-battle root project"
 
 scalaVersion in ThisBuild := "2.11.8"
+
+def env(key: String, default: String): String = Option(System.getenv(key)).getOrElse(default)
 
 lazy val root = project.in(file(".")).
   aggregate(ophanBattleJS, ophanBattleJVM).
@@ -15,7 +19,7 @@ lazy val ophanBattle = crossProject.in(file(".")).
   settings(
     name := "ophan-battle",
     version := "0.1-SNAPSHOT"
-  ).jvmConfigure(_.enablePlugins(PlayScala,BuildInfoPlugin)).jvmSettings(
+  ).jvmConfigure(_.enablePlugins(PlayScala,BuildInfoPlugin,RiffRaffArtifact)).jvmSettings(
   libraryDependencies ++= Seq(
     "com.vmunier" %% "scalajs-scripts" % "1.0.0",
     "com.lihaoyi" %% "upickle" % "0.4.4",
@@ -28,6 +32,39 @@ lazy val ophanBattle = crossProject.in(file(".")).
   buildInfoKeys := Seq[BuildInfoKey](
     name
   ),
+
+  serverLoading in Debian := Systemd,
+
+  debianPackageDependencies := Seq("openjdk-8-jre-headless"),
+
+  javaOptions in Universal ++= Seq(
+    "-Dpidfile.path=/dev/null",
+    "-J-XX:MaxRAMFraction=2",
+    "-J-XX:InitialRAMFraction=2",
+    "-J-XX:MaxMetaspaceSize=500m",
+    "-J-XX:+PrintGCDetails",
+    "-J-XX:+PrintGCDateStamps",
+    s"-J-Xloggc:/var/log/${name.value}/gc.log"
+  ),
+
+  maintainer := "Membership Dev <membership.dev@theguardian.com>",
+
+  packageSummary := "Membership Frontend service",
+
+  packageDescription := """Ophan-Battle appserver""",
+
+  riffRaffPackageType := (packageBin in Debian).value,
+
+  riffRaffBuildIdentifier := env("BUILD_NUMBER", "DEV"),
+
+  riffRaffManifestBranch := env("BRANCH_NAME", "unknown_branch"),
+
+  riffRaffManifestVcsUrl  := "git@github.com:guardian/membership-frontend.git",
+
+  riffRaffUploadArtifactBucket := Option("riffraff-artifact"),
+
+  riffRaffUploadManifestBucket := Option("riffraff-builds"),
+
   scroogeThriftOutputFolder in Compile := sourceManaged.value / "thrift",
   managedSourceDirectories in Compile += (scroogeThriftOutputFolder in Compile).value
 ).jsSettings(
