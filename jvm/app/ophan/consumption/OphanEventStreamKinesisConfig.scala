@@ -40,7 +40,7 @@ object OphanEventStreamKinesisConfig {
     defaultCredentialsProvider,
     workerId)
     .withInitialLeaseTableReadCapacity(20)
-    .withInitialLeaseTableWriteCapacity(20)
+    .withInitialLeaseTableWriteCapacity(40)
     .withInitialPositionInStream(LATEST)
     .withRegionName(EU_WEST_1.getName)
 }
