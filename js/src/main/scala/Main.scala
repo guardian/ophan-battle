@@ -1,3 +1,5 @@
+import java.lang.Math.min
+
 import autowire._
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, ReactDOM}
@@ -37,9 +39,10 @@ object Main extends js.JSApp {
     val comp = ReactComponentB[BattleState]("MyComponent").render_P {
       bs =>
         val playerDivs = for {
-          (contestantId, score) <- bs.scores.toSeq.sortBy(_._2).reverse
+          ((contestantId, score), index) <- bs.scores.toSeq.sortBy(_._2).reverse.zipWithIndex
         } yield {
-          <.h1(^.`class` :="display-2",
+          val displaySize = min(index + 1,4)
+          <.h1(^.`class` := s"display-$displaySize",
             contestantId+": ", <.b(score)
           )
         }
