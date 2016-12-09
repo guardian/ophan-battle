@@ -1,6 +1,7 @@
 import autowire._
+import japgolly.scalajs.react.vdom.prefix_<^._
+import japgolly.scalajs.react.{ReactComponentB, ReactDOM}
 import org.scalajs.dom.ext.Ajax
-import org.scalajs.dom.html.Canvas
 import shared.{AutowiredApi, BattleState}
 import upickle.Js
 import upickle.default.{readJs, writeJs, _}
@@ -9,7 +10,7 @@ import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExport
-import scala.util.Random
+
 
 object Ajaxer extends autowire.Client[Js.Value, Reader, Writer]{
   override def doCall(req: Request): Future[Js.Value] = {
@@ -31,40 +32,29 @@ object Main extends js.JSApp {
   def main(): Unit = {
     import org.scalajs.dom
 
-    type Ctx2D =
-      dom.CanvasRenderingContext2D
-
-    val c = dom.document.createElement("canvas").asInstanceOf[Canvas]
-    val ctx = c.getContext("2d").asInstanceOf[Ctx2D]
-
-    c.width = (0.95 * dom.window.innerWidth).toInt
-    c.height = (0.95 * dom.window.innerHeight).toInt
-    dom.document.body.appendChild(c)
-
-    val w = c.width / 2
-//    c.width = w
-//    c.height = w
-
-    ctx.strokeStyle = "red"
-    ctx.lineWidth = 3
-    ctx.beginPath()
-    ctx.moveTo(w / 3, 0)
-    ctx.lineTo(w / 3, w / 3)
-    ctx.moveTo(w * 2 / 3, 0)
-    ctx.lineTo(w * 2 / 3, w / 3)
-    ctx.moveTo(w, w / 2)
-    ctx.arc(w / 2, w / 2, w / 2, 0, 3.14)
-
-    ctx.stroke()
-
     val eventSource = new dom.EventSource("/boom")
 
+    val comp = ReactComponentB[BattleState]("MyComponent").render_P {
+      bs =>
+        val playerDivs = for {
+          (contestantId, score) <- bs.scores.toSeq.sortBy(_._2).reverse
+        } yield {
+          <.h1(^.`class` :="display-2",
+            contestantId+": ", <.b(score)
+          )
+        }
+
+        <.div(playerDivs)
+    }.build
+
+
+    ReactDOM.render(comp(BattleState(Map.empty)), dom.document.getElementById("root"))
 
     eventSource.onmessage = {
       (message: dom.MessageEvent) =>
-        println(message.data)
         val state = Ajaxer.read[BattleState](upickle.json.read(message.data.toString))
-        ctx.fillText(state.toString, Random.nextInt(300), Random.nextInt(300))
+
+        ReactDOM.render(comp(state),  dom.document.getElementById("root")) // ha, this is probably wrong, right?!
     }
   }
 

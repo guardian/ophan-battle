@@ -112,8 +112,8 @@ class Api @Inject()(
   override def makeAHit(): Future[String] = {
     send(BattleState(
       Map[String, Long](
-        "foo" -> scala.util.Random.nextInt(50),
-        "bar" -> scala.util.Random.nextInt(50)
+        "roberto-tyley" -> scala.util.Random.nextInt(50),
+        "phil-wills" -> scala.util.Random.nextInt(50)
       )
     ))
 

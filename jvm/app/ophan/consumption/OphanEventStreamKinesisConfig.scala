@@ -26,7 +26,7 @@ object OphanEventStreamKinesisConfig {
 
   val defaultCredentialsProvider = new AWSCredentialsProviderChain(
     new ProfileCredentialsProvider("membership"),
-    new InstanceProfileCredentialsProvider
+    new InstanceProfileCredentialsProvider(false)
   )
 
   // Unique ID for the worker thread

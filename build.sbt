@@ -65,8 +65,29 @@ lazy val ophanBattle = crossProject.in(file(".")).
   libraryDependencies ++= Seq(
     "org.scala-js" %%% "scalajs-dom" % "0.9.1",
     "com.lihaoyi" %%% "upickle" % "0.4.4",
-    "com.lihaoyi" %%% "autowire" % "0.2.6"
-  )
+    "com.lihaoyi" %%% "autowire" % "0.2.6",
+    "com.github.japgolly.scalajs-react" %%% "core" % "0.11.3"
+  ),
+
+    // React JS itself (Note the filenames, adjust as needed, eg. to remove addons.)
+    jsDependencies ++= Seq(
+
+    "org.webjars.bower" % "react" % "15.3.2"
+      /        "react-with-addons.js"
+      minified "react-with-addons.min.js"
+      commonJSName "React",
+
+    "org.webjars.bower" % "react" % "15.3.2"
+      /         "react-dom.js"
+      minified  "react-dom.min.js"
+      dependsOn "react-with-addons.js"
+      commonJSName "ReactDOM",
+
+    "org.webjars.bower" % "react" % "15.3.2"
+      /         "react-dom-server.js"
+      minified  "react-dom-server.min.js"
+      dependsOn "react-dom.js"
+      commonJSName "ReactDOMServer")
 ).jsConfigure(_.enablePlugins(ScalaJSWeb))
 
 lazy val ophanBattleJS = ophanBattle.js
