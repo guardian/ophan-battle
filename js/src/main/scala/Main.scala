@@ -42,8 +42,11 @@ object Main extends js.JSApp {
           ((contestantId, score), index) <- bs.scores.toSeq.sortBy(_._2).reverse.zipWithIndex
         } yield {
           val displaySize = min(index + 2,4)
+          val scoreElement = if (index==0) {
+            <.span(score,<.span(^.color:="#FFD700","\ud83d\udc51"))
+          } else <.span(score)
           <.h1(^.`class` := s"display-$displaySize",
-            contestantId+": ", <.b(score)
+            contestantId+": ", scoreElement
           )
         }
 
