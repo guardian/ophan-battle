@@ -6,4 +6,6 @@ import scala.concurrent.Future
 trait AutowiredApi {
 
   def makeAHit(): Future[String]
+
+  def getBattleState(): Future[BattleState]
 }

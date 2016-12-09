@@ -86,9 +86,13 @@ class Api @Inject()(
         count.addAndGet(tagId, tagCount)
       }
       if (countsByTag.nonEmpty) {
-        send(BattleState(count.asMap().toMap.mapValues(_.toLong)))
+        send(battleState())
       }
     }
+  }
+
+  private def battleState() = {
+    BattleState(count.asMap().toMap.mapValues(_.toLong))
   }
 
   def autowireApi(path: String) = Action.async(parse.json) { implicit request =>
@@ -107,6 +111,10 @@ class Api @Inject()(
 
   def mixedStream = Action {
     Ok.chunked(source via EventSource.flow).as(ContentTypes.EVENT_STREAM)
+  }
+
+  override def getBattleState(): Future[BattleState] = {
+    Future.successful(battleState())
   }
 
   override def makeAHit(): Future[String] = {

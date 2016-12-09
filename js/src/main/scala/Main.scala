@@ -53,8 +53,11 @@ object Main extends js.JSApp {
         <.div(playerDivs)
     }.build
 
-
-    ReactDOM.render(comp(BattleState(Map.empty)), dom.document.getElementById("root"))
+    for {
+      battleState <- Ajaxer[AutowiredApi].getBattleState().call()
+    } {
+      ReactDOM.render(comp(battleState), dom.document.getElementById("root"))
+    }
 
     eventSource.onmessage = {
       (message: dom.MessageEvent) =>
