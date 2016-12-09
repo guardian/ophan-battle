@@ -41,7 +41,7 @@ object Main extends js.JSApp {
         val playerDivs = for {
           ((contestantId, score), index) <- bs.scores.toSeq.sortBy(_._2).reverse.zipWithIndex
         } yield {
-          val displaySize = min(index + 1,4)
+          val displaySize = min(index + 2,4)
           <.h1(^.`class` := s"display-$displaySize",
             contestantId+": ", <.b(score)
           )
