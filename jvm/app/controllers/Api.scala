@@ -119,15 +119,15 @@ class Api @Inject()(
 
   override def makeAHit(): Future[String] = {
     count.clear()
+//
+//    send(BattleState(
+//      Map[String, Long](
+//        "roberto-tyley" -> scala.util.Random.nextInt(50),
+//        "phil-wills" -> scala.util.Random.nextInt(50)
+//      )
+//    ))
 
-    send(BattleState(
-      Map[String, Long](
-        "roberto-tyley" -> scala.util.Random.nextInt(50),
-        "phil-wills" -> scala.util.Random.nextInt(50)
-      )
-    ))
-
-    Future.successful("Totally sent it")
+    Future.successful("Didn't send it")
   }
 
 
